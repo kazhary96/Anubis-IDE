@@ -2,7 +2,7 @@
 #############      this project is part of my graduation project and it intends to make a fully functioned IDE from scratch    ########
 #############      I've borrowed a function (serial_ports()) from a guy in stack overflow whome I can't remember his name, so I gave hime the copyrights of this function, thank you  ########
 
-
+from io import StringIO
 import sys
 import glob
 import serial
@@ -69,6 +69,7 @@ class Signal(QObject):
 # Making text editor as A global variable (to solve the issue of being local to (self) in widget class)
 text = QTextEdit
 text2 = QTextEdit
+PR = QLineEdit
 
 #
 #
@@ -177,6 +178,14 @@ class Widget(QWidget):
         V_splitter.addWidget(H_splitter)
         V_splitter.addWidget(text2)
 
+        PRtext = QLabel(self)
+        PRtext.setText("Enter the Parameters here, you can use the (;) to separate between the Parameters")
+        V_splitter.addWidget(PRtext)
+
+        global PR
+        PR = QLineEdit(self)
+        V_splitter.addWidget(PR)
+
         Final_Layout = QHBoxLayout(self)
         Final_Layout.addWidget(V_splitter)
 
@@ -260,6 +269,8 @@ class UI(QMainWindow):
         filemenu = menu.addMenu('File')
         Port = menu.addMenu('Port')
         Run = menu.addMenu('Run')
+       
+
 
         # As any PC or laptop have many ports, so I need to list them to the User
         # so I made (Port_Action) to add the Ports got from (serial_ports()) function
@@ -311,19 +322,50 @@ class UI(QMainWindow):
         self.setCentralWidget(widget)
         self.show()
 
-    ###########################        Start OF the Functions          ##################
-    def Run(self):
-        if self.port_flag == 0:
-            mytext = text.toPlainText()
-        #
-        ##### Compiler Part
-        #
-#            ide.create_file(mytext)
-#            ide.upload_file(self.portNo)
-            text2.append("Sorry, there is no attached compiler.")
+    
 
-        else:
-            text2.append("Please Select Your Port Number First")
+
+
+
+    ###########################        Start OF the Functions          ##################
+
+
+    def Run(self):
+        mytext = text.toPlainText()
+        text2.clear()
+
+        if len(mytext) > 7 and mytext[0:4] == 'def ':
+            begin = mytext[0:mytext.find("(")]
+            block = begin + "("
+            Parameters = PR.text().split(';')
+
+            for i in Parameters:
+                block+= i + ","
+            
+            block = block[4:len(block) - 1]
+            block += ')'
+            codeOut = StringIO()
+            sys.stdout = codeOut
+            exec(mytext + "\n" + block)
+            text2.append(codeOut.getvalue())
+            sys.stdout = sys.__stdout__
+            codeOut.close()
+
+
+
+#         if self.port_flag == 0:
+#             mytext = text.toPlainText()
+#         #
+#         ##### Compiler Part
+#         #
+# #            ide.create_file(mytext)
+# #            ide.upload_file(self.portNo)
+#             text2.append("Sorry, there is no attached compiler.")
+
+#         else:
+#             text2.append("Please Select Your Port Number First")
+
+
 
 
     # this function is made to get which port was selected by the user
